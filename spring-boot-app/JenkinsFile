@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker {
       image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mounts Docker socket
+      args '--user root -v /var/run/docker.sock:/var/run/docker.sock -v C:/ProgramData/Jenkins/.jenkins/workspace/ultimate-ci-cd:/workspace' // mount the Jenkins workspace to Docker container
     }
   }
   environment {
@@ -19,6 +19,7 @@ pipeline {
     
     stage('Build and Test') {
       steps {
+        // Navigate to the app directory and run the Maven build
         bat 'cd java-app\\spring-boot-app && mvn clean package' // Build the project using Maven
       }
     }
