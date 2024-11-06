@@ -1,11 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'saaddocker419/maven-docker-agent:v1'  // Use your custom Docker image
-            args '--user root -v /var/run/docker.sock:/var/run/docker.sock -v /mnt/c/ProgramData/Jenkins/.jenkins/workspace/ultimate-ci-cd:/workspace -w /workspace' 
-            // Convert Windows paths to Docker-compatible Linux paths
-        }
-    }
+    agent any
 
     environment {
         SONAR_URL = "http://localhost:9099" // Local SonarQube URL
