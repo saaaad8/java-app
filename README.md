@@ -6,7 +6,6 @@
 
 # Jenkins CI/CD Pipeline
 
-This README provides an in-depth explanation of **Continuous Integration (CI)** and **Continuous Delivery (CD)**, along with how these concepts are implemented in a Jenkins pipeline for your project.
 
 ## Table of Contents
 1. [Introduction](#introduction)
