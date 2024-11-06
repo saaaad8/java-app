@@ -1,29 +1,24 @@
 pipeline {
-  agent {
-    docker {
-      image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock -v C:/ProgramData/Jenkins/.jenkins/workspace/ultimate-ci-cd:/workspace' // mount the Jenkins workspace to Docker container
-    }
-  }
+  agent any  // Use the default agent (host system)
+
   environment {
     SONAR_URL = "http://localhost:9099" // Local SonarQube URL
     DOCKER_IMAGE = "saaddocker419/java-app:${BUILD_NUMBER}" // Docker Hub repository and image
   }
+
   stages {
     stage('Checkout') {
       steps {
-        // Clone the repository from GitHub
         bat 'git clone -b win https://github.com/saaaad8/java-app.git'
       }
     }
-    
+
     stage('Build and Test') {
       steps {
-        // Navigate to the app directory and run the Maven build
-        bat 'cd java-app\\spring-boot-app && mvn clean package' // Build the project using Maven
+        bat 'cd java-app\\spring-boot-app && mvn clean package'
       }
     }
-    
+
     stage('Static Code Analysis') {
       steps {
         withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
@@ -34,7 +29,7 @@ pipeline {
         }
       }
     }
-    
+
     stage('Build and Push Docker Image') {
       steps {
         script {
@@ -43,20 +38,20 @@ pipeline {
             cd java-app\\spring-boot-app
             docker build -t %DOCKER_IMAGE% .
           '''
-          
+
           // Push Docker image to Docker Hub
           def dockerImage = docker.image("${DOCKER_IMAGE}")
           docker.withRegistry('https://index.docker.io/v1/', "docker-jenkins") {
-              dockerImage.push()
+            dockerImage.push()
           }
         }
       }
     }
-    
+
     stage('Update Deployment File') {
       environment {
-        GIT_REPO_NAME = "java-app-manifests" // Repository for Kubernetes manifests
-        GIT_USER_NAME = "saaaad8" // Your GitHub username
+        GIT_REPO_NAME = "java-app-manifests"
+        GIT_USER_NAME = "saaaad8"
       }
       steps {
         withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
@@ -64,11 +59,9 @@ pipeline {
             git config user.email "your-email@example.com"
             git config user.name "Your Name"
             set BUILD_NUMBER=%BUILD_NUMBER%
-            
-            // Update the image tag in the deployment YAML file
+
             powershell -Command "(Get-Content java-app\\spring-boot-app-manifests\\deployment.yml) -replace 'replaceImageTag', '%BUILD_NUMBER%' | Set-Content java-app\\spring-boot-app-manifests\\deployment.yml"
             
-            // Commit and push changes to the Git repository
             git add java-app\\spring-boot-app-manifests\\deployment.yml
             git commit -m "Update deployment image to version %BUILD_NUMBER%"
             git push https://%GITHUB_TOKEN%@github.com/%GIT_USER_NAME%/%GIT_REPO_NAME% HEAD:main
