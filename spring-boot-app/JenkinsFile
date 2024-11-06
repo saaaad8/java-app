@@ -13,7 +13,8 @@ pipeline {
     stage('Checkout') {
       steps {
         // Use checkout scm to automatically clone the repository
-        //checkout scm
+        // checkout scm
+        bat 'echo successful'
       }
     }
 
