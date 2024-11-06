@@ -2,7 +2,8 @@ pipeline {
     agent {
         docker {
             image 'saaddocker419/maven-docker-agent:v1'  // Use your custom Docker image
-            args '--user root -v /var/run/docker.sock:/var/run/docker.sock'  // Allows Docker in Docker
+            args '--user root -v /var/run/docker.sock:/var/run/docker.sock -v /c/ProgramData/Jenkins/.jenkins/workspace/ultimate-ci-cd:/workspace' 
+            // Convert Windows paths to Docker-compatible Linux paths
         }
     }
 
