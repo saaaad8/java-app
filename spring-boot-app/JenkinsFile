@@ -9,22 +9,22 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                bat 'echo successful'
+                git url: 'https://github.com/saaaad8/java-app.git', branch: 'main'
             }
         }
 
         stage('Build and Test') {
             steps {
-                bat 'cd java-app\\spring-boot-app && mvn clean package'
+                sh 'cd java-app/spring-boot-app && mvn clean package'
             }
         }
 
         stage('Static Code Analysis') {
             steps {
                 withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-                    bat '''
-                        cd java-app\\spring-boot-app 
-                        mvn sonar:sonar -Dsonar.login=%SONAR_AUTH_TOKEN% -Dsonar.host.url=%SONAR_URL%
+                    sh '''
+                        cd java-app/spring-boot-app 
+                        mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=$SONAR_URL
                     '''
                 }
             }
@@ -33,9 +33,9 @@ pipeline {
         stage('Build and Push Docker Image') {
             steps {
                 script {
-                    bat '''
-                        cd java-app\\spring-boot-app
-                        docker build -t %DOCKER_IMAGE% .
+                    sh '''
+                        cd java-app/spring-boot-app
+                        docker build -t $DOCKER_IMAGE .
                     '''
                     
                     def dockerImage = docker.image("${DOCKER_IMAGE}")
@@ -53,16 +53,15 @@ pipeline {
             }
             steps {
                 withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                    bat '''
+                    sh '''
                         git config user.email "your-email@example.com"
                         git config user.name "Your Name"
-                        set BUILD_NUMBER=%BUILD_NUMBER%
                         
-                        powershell -Command "(Get-Content java-app\\spring-boot-app-manifests\\deployment.yml) -replace 'replaceImageTag', '%BUILD_NUMBER%' | Set-Content java-app\\spring-boot-app-manifests\\deployment.yml"
+                        sed -i 's/replaceImageTag/'"${BUILD_NUMBER}"'/g' java-app/spring-boot-app-manifests/deployment.yml
                         
-                        git add java-app\\spring-boot-app-manifests\\deployment.yml
-                        git commit -m "Update deployment image to version %BUILD_NUMBER%"
-                        git push https://%GITHUB_TOKEN%@github.com/%GIT_USER_NAME%/%GIT_REPO_NAME% HEAD:main
+                        git add java-app/spring-boot-app-manifests/deployment.yml
+                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                        git push https://$GITHUB_TOKEN@github.com/$GIT_USER_NAME/$GIT_REPO_NAME HEAD:main
                     '''
                 }
             }
